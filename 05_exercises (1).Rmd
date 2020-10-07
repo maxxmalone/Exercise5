@@ -124,7 +124,7 @@ ggplotly(garden_plotly_graph2)
   2. Use animation to tell an interesting story with the `small_trains` dataset that contains data from the SNCF (National Society of French Railways). These are Tidy Tuesday data! Read more about it [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-02-26).
 
 ```{r}
-animate_small_trains <- small_trains %>% 
+#animate_small_trains <- small_trains %>% 
   
 ```
 
@@ -137,21 +137,21 @@ animate_small_trains <- small_trains %>%
   * Add animation to reveal the plot over date. 
   
 ```{r}
-animate_garden_harvest <- garden_harvest %>% 
-  filter(vegetable %in% c("tomatoes")) %>%
-  group_by(variety, date) %>% 
-  summarize(daily_harvest = sum(weight)*0.00220462) %>% 
-  mutate(day_of_week = wday(date, label = TRUE),
-         cumulative_daily_harvest=cumsum(daily_harvest),
-         mutate(variety = fct_reorder(variety, cumulative_daily_harvest, sum, .desc=TRUE))) %>% 
-ggplot(aes(x=cumulative_daily_harvest, y=day_of_week, fill=variety,
-           alpha=.5))+
-   geom_area() +
-labs(title="Tomato cumulative harvest by day",
-     x="",
-     y="")
+#animate_garden_harvest <- garden_harvest %>% 
+  #filter(vegetable %in% c("tomatoes")) %>%
+  #group_by(variety, date) %>% 
+  #summarize(daily_harvest = sum(weight)*0.00220462) %>% 
+  #mutate(day_of_week = wday(date, label = TRUE),
+         #cumulative_daily_harvest=cumsum(daily_harvest),
+         #mutate(variety = fct_reorder(variety, cumulative_daily_harvest, sum, .desc=TRUE))) %>% 
+#ggplot(aes(x=cumulative_daily_harvest, y=day_of_week, fill=variety,
+           #alpha=.5))+
+   #geom_area() +
+#labs(title="Tomato cumulative harvest by day",
+     #x="",
+     #y="")
 
-animate_garden_harvest
+#animate_garden_harvest
 ```
   
 
@@ -200,7 +200,8 @@ knitr::include_graphics("mallorcamap.gif")
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
 ```{r}
-
+panama_swim %>% 
+  bind_rows(list(panama_bike, panama_run),)
 ```
   
 ## COVID-19 data
