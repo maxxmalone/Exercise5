@@ -1,6 +1,6 @@
 ---
 title: 'Weekly Exercises #5'
-author: "Put your name here"
+author: "Phebe Chen"
 output: 
   html_document:
     keep_md: TRUE
@@ -123,10 +123,24 @@ ggplotly(garden_plotly_graph2)
   
   2. Use animation to tell an interesting story with the `small_trains` dataset that contains data from the SNCF (National Society of French Railways). These are Tidy Tuesday data! Read more about it [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-02-26).
 
-```{r}
-#animate_small_trains <- small_trains %>% 
-  
+```{r smalltrainsanimate-gganimate, eval=FALSE, echo=FALSE}
+small_trains_animate<-small_trains %>% 
+  ggplot(aes(x = year, 
+             y = journey_time_avg)) +
+  geom_jitter() +
+  labs(title = "Daily tomato harvest",
+       x = "Year",
+       y = "Travel time")+
+  transition_states(service)
 ```
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("smalltrainsanimate.gif")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("smalltrainsanimate.gif")
+```  
 
 ## Garden data
 
@@ -136,24 +150,32 @@ ggplotly(garden_plotly_graph2)
   * Use the data you just made to create a static cumulative harvest area plot, with the areas filled with different colors for each vegetable and arranged (HINT: `fct_reorder()`) from most to least harvested (most on the bottom).  
   * Add animation to reveal the plot over date. 
   
-```{r}
-#animate_garden_harvest <- garden_harvest %>% 
-  #filter(vegetable %in% c("tomatoes")) %>%
-  #group_by(variety, date) %>% 
-  #summarize(daily_harvest = sum(weight)*0.00220462) %>% 
-  #mutate(day_of_week = wday(date, label = TRUE),
-         #cumulative_daily_harvest=cumsum(daily_harvest),
-         #mutate(variety = fct_reorder(variety, cumulative_daily_harvest, sum, .desc=TRUE))) %>% 
-#ggplot(aes(x=cumulative_daily_harvest, y=day_of_week, fill=variety,
-           #alpha=.5))+
-   #geom_area() +
-#labs(title="Tomato cumulative harvest by day",
-     #x="",
-     #y="")
+```{r animate_garden_harvest-gganimate, eval=FALSE, echo=FALSE}
+animate_garden_harvest <- garden_harvest %>% 
+  filter(vegetable %in% c("tomatoes")) %>%
+  complete(variety,date, fill=list(weight=0)) %>% 
+  group_by(variety, date) %>% 
+  summarize(daily_harvest = sum(weight)*0.00220462) %>% 
+  ungroup() %>% 
+  mutate(cumulative_daily_harvest=cumsum(daily_harvest),
+         variety=fct_reorder(variety, daily_harvest, sum))
 
-#animate_garden_harvest
+animate_garden_harvest %>% 
+ggplot(aes(x=date, y=cumulative_daily_harvest, fill=variety))+
+   geom_area() +
+labs(title="Tomato cumulative harvest by day",
+     x="",
+     y="")+
+transition_reveal(date)
 ```
   
+```{r, eval=FALSE, echo=FALSE}
+anim_save("animate_garden_harvest.gif")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("animate_garden_harvest.gif")
+```  
 
 ## Maps, animation, and movement!
 
@@ -197,12 +219,47 @@ anim_save("mallorcamap.gif")
 knitr::include_graphics("mallorcamap.gif")
 ```  
  
+ I prefer this graph over a static map because I think it's a lot easier to visualize where you went on your bike trip in Mallorca and see the elevation as well.  
+ 
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
-```{r}
-panama_swim %>% 
-  bind_rows(list(panama_bike, panama_run),)
+```{r panamarace-gganimate, eval=FALSE, echo=FALSE}
+panama_race <- panama_swim %>% 
+  bind_rows(list(panama_bike, panama_run, panama_swim))
+
+panama_map <- get_stamenmap(
+    bbox = c(left = -79.6342, bottom =8.8856, right = -79.4471, top = 9.0143), 
+    maptype = "terrain",
+    zoom = 12)
+ggmap(panama_map) +
+  geom_path(data = panama_race, 
+             aes(x = lon, y = lat, color = event),
+             size = .5) +
+  geom_point(data=panama_bike,
+             aes(x=lon, y=lat),
+             color="red",
+             size=.5)+
+  geom_point(data=panama_run,
+             aes(x=lon, y=lat),
+             color="blue",
+             size=.5)+
+  geom_point(data=panama_swim,
+             aes(x=lon, y=lat),
+             color="green",
+             size=.5)+
+  scale_color_viridis_d(option = "inferno") +
+  theme_map() +
+transition_reveal(time)
 ```
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("panamarace.gif")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("panamarace.gif")
+```  
+  
   
 ## COVID-19 data
 
@@ -214,7 +271,77 @@ panama_swim %>%
   * Use the `animate()` function to have 200 frames in your animation and make it 30 seconds long. 
   * Comment on what you observe.
   
+```{r covidanimation-gganimate, eval=FALSE, echo=FALSE}
+covid19_by_week <- covid19 %>% 
+  group_by(state) %>% 
+  mutate(day_of_week=wday(date, label=TRUE),
+         cum_7_day_lag=lag(cases, n=7, default=NA , order_by=date)) %>% 
+  replace_na(list(cum_7_day_lag=0)) %>% 
+ mutate(new_cases=(cases-cum_7_day_lag)) %>% 
+  filter(cases >= 20)
+
+covid19_animation <- covid19_by_week %>%
+  ggplot(aes(x = cases, y = new_cases)) +
+  geom_path(aes(group = state)) +
+  scale_x_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma) +
+  transition_reveal(date) +
+  geom_point(aes(group = state)) +
+  geom_text(aes(label = state, group = state), check_overlap = TRUE)+
+labs(title="New Cases of COVID per week",
+     x="Cases",
+     y="New Cases")
+
+  animate(covid19_animation, nframes = 200, duration = 30)
+```
+```{r, eval=FALSE, echo=FALSE}
+anim_save("covidanimation.gif")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("covidanimation.gif")
+```  
+  
+  
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. Put date in the subtitle. Comment on what you see.
+  
+```{r covid19per10000animation-gganimate, eval=FALSE, echo=FALSE}
+census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>%   
+  separate(state, into = c("dot","state"), extra = "merge") %>% 
+  select(-dot) %>% 
+  mutate(state = str_to_lower(state))
+
+covid19_animation <- covid19 %>%
+  mutate(state = str_to_lower(state)) %>%
+  left_join(census_pop_est_2018,
+            by = c("state")) %>%
+    mutate(cases_per_10000 = (cases/est_pop_2018)*10000,
+           weekday = wday(date, label = TRUE)) %>%
+    filter(weekday %in% "Sat")
+
+states_map <- map_data("state")
+
+covid19_animation %>%
+  ggplot() +
+    geom_map(map = states_map, 
+           aes(map_id = state,
+               group = date,
+               fill = cases_per_10000)) +
+  labs(title = "COVID-19 cases per 10,000 residents",
+       subtitle = "Time: {closest_state}",
+       fill="Cases per 10,000")+
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  theme_map() +
+  transition_states(date)
+```
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("covid19per10000animation.gif")
+```
+
+```{r, echo=FALSE}
+knitr::include_graphics("covid19per10000animation.gif")
+```  
 
 ## Your first `shiny` app
 
